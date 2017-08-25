@@ -33,7 +33,7 @@ static void send_debug_message( int i )
 /****************************************************************/
 // Wrapper on strcmp for clarity of code.  Returns true if strings are
 // identical.
-static int string_equal( char *str1, char *str2) 
+static int string_equal( char *str1, char *str2 )
 {
   return !strcmp(str1, str2);
 }
@@ -47,13 +47,15 @@ static void parse_input_message(int argc, char *argv[])
   // Interpret the first token as a command symbol.
   char *command = argv[0];
 
+  send_debug_message(command);
+
   if (string_equal(command, "led")) {
     int value = atoi(argv[1] );
     if (value) {
       digitalWrite(LED_BUILTIN, HIGH);
-    } 
+    }
     else {
-      digitalWrite(LED_BUILTIN, LOW); 
+      digitalWrite(LED_BUILTIN, LOW);
     }
   }
 }
@@ -97,10 +99,10 @@ static void serial_input_poll(void)
 	if (error) send_debug_message("excessive input error");
 
 	// else process any complete message
-	else if (argc > 0) parse_input_message( argc, argv ); 
+	else if (argc > 0) parse_input_message( argc, argv );
 
 	// reset the full input state
-	error = chars_in_token = chars_in_buffer = argc = 0;                     
+	error = chars_in_token = chars_in_buffer = argc = 0;
       }
     }
 
@@ -137,8 +139,8 @@ void setup()
   // initialize the Serial port
   Serial.begin( BAUD_RATE );
   pinMode(LED_BUILTIN, OUTPUT);
-  
-  send_debug_message("wakeup");  
+
+  send_debug_message("wakeup");
 }
 
 void loop()
