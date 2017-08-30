@@ -52,29 +52,33 @@ oscServer.on('message', function (msg, rinfo) {
 });
 
 /*
+ * key - which: (int)
+ * value - rgbw: (object)
+ */
+var whichFrom = {};
+var whichTo = {};
+
+/*
  * which: (int) number of light to control
  * amp: (float) [0, 1]
  */
 function hit(which, amp) {
   var attack = 100; // ms
   var decay = 900; // ms
+
+  var currentChannels = _getChannels(which);
+
   var to = _mapChannels(which, {
     r: Math.random() * 255 * amp,
     g: Math.random() * 255 * amp,
     b: Math.random() * 255 * amp,
     w: 0
   });
-  var fade = _mapChannels(which, {
-    r: 0,
-    g: 0,
-    b: 0,
-    w: 0
-  });
   new DMX.Animation()
     .add(to, attack, {
       easing: 'outExpo'
     })
-    .add(fade, decay, {
+    .add(currentChannels, decay, {
       easing: 'inExpo'
     })
     .run(universe);
@@ -93,6 +97,8 @@ function set(which, h, s, v) {
   // TODO: send /phone/rgb r g b back to phone
 }
 
+module.exports.set = set;
+
 /*
  * which: (int) number of light to control
  * rgbw: (obj) object with properties r, g, b, w
@@ -107,3 +113,12 @@ function _mapChannels(which, rgbw) {
   return channels;
 }
 
+function _getChannels(which) {
+  which = which + 1; // needed if player number 0 exists
+  var channels = {};
+  channels[which * 4] = universe.get(which * 4);
+  channels[which * 4 + 1] = universe.get(which * 4 + 1);
+  channels[which * 4 + 2] = universe.get(which * 4 + 2);
+  channels[which * 4 + 3] = universe.get(which * 4 + 3);
+  return channels;
+}
