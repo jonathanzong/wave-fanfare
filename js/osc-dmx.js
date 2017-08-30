@@ -38,7 +38,6 @@ oscServer.on('message', function (msg, rinfo) {
             /led/:x/hit f
           */
           var amplitude = msg[1];
-
           hit(which, amplitude);
           break;
         case 'play':
@@ -57,16 +56,28 @@ oscServer.on('message', function (msg, rinfo) {
  * amp: (float) [0, 1]
  */
 function hit(which, amp) {
-  var duration = 500; // ms
-  var channels = _mapChannels(which, {
+  var attack = 100; // ms
+  var decay = 900; // ms
+  var to = _mapChannels(which, {
     r: Math.random() * 255 * amp,
     g: Math.random() * 255 * amp,
     b: Math.random() * 255 * amp,
     w: 0
-  })
-  new DMX.Animation().add(channels, duration, {
-    easing: 'outExpo'
-  }).run(universe);
+  });
+  var fade = _mapChannels(which, {
+    r: 0,
+    g: 0,
+    b: 0,
+    w: 0
+  });
+  new DMX.Animation()
+    .add(to, attack, {
+      easing: 'outExpo'
+    })
+    .add(fade, decay, {
+      easing: 'inExpo'
+    })
+    .run(universe);
 }
 
 /*
