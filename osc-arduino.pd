@@ -1,0 +1,28 @@
+#N canvas 675 23 679 719 10;
+#X declare -lib mrpeach;
+#X text 165 251 Arduino Uno on MacBook Air right-side USB port;
+#X text 164 279 Arduino Uno on Raspberry Pi;
+#X obj 22 1 cnv 15 600 120 empty empty OneInOneOutAsciiTest 20 12 0
+14 -204800 -66577 0;
+#X text 215 4 Demonstration of communicating with an Arduino Uno running
+the OneInOneOutASCII skech. Messages are sent bidirectionally over
+the serial port using a plain text protocol.;
+#X obj 22 130 cnv 15 400 80 empty empty empty 20 12 0 14 -262130 -66577
+0;
+#X text 216 66 Note that the Arduino communication requires the moocow
+and comport libraries which are not by default included in vanilla
+Pd \, so Pd-extended is recommended.;
+#X text 162 222 Typical serial port name under Windows.;
+#X text 37 136 Choose the appropriate serial port below to connect
+to the Arduino \, or edit a message to set the Arduino serial port
+defined on your particular machine. If you're not sure of the device
+name format \, the [devices( button to the right will print known device
+names to the console.;
+#X obj 300 341 import mrpeach;
+#X obj 300 374 udpreceive 54321;
+#X obj 301 408 unpackOSC;
+#X obj 301 442 routeOSC /led;
+#X obj 306 488 print;
+#X connect 9 0 10 0;
+#X connect 10 0 11 0;
+#X connect 11 0 12 0;

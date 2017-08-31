@@ -1,4 +1,5 @@
 var oscdmx = require('../js/osc-dmx');
+var hsi2rgbw = require('../js/hsi2rgbw');
 
 var express = require('express');
 var app = express();
@@ -17,7 +18,7 @@ io.on('connection', function(socket){
 
   socket.on('hsv', function(hsv){
     oscdmx.set(which, hsv.h, hsv.s, hsv.v)
-    console.log(hsv);
+    oscdmx.setPicker(hsv);
   });
 
   socket.on('which', function(x){

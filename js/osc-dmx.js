@@ -2,6 +2,7 @@
 
 var osc = require('node-osc');
 var hsi2rgbw = require('./hsi2rgbw');
+var Animation = require('./animation');
 
 // init osc
 var oscServer = new osc.Server(54321, '0.0.0.0');
@@ -13,9 +14,16 @@ var universe = dmx.addUniverse('wave-fanfare',
   'enttec-usb-dmx-pro',
   '/dev/cu.usbserial-EN209974');
 
+var pickerRgbw;
+
+var isHitting = false;
+
+// testChannels();
+
 // route incoming osc messages
 oscServer.on('message', function (msg, rinfo) {
   console.log('recv: ' + msg.join(' '));
+  // console.log(isHitting);
 
   var addr = msg[0].substring(1).split('/');
 
@@ -38,13 +46,16 @@ oscServer.on('message', function (msg, rinfo) {
             /led/:x/hit f
           */
           var amplitude = msg[1];
-          hit(which, amplitude);
+          hit(1, amplitude);
           break;
         case 'play':
           /*
             /led/:x/play f
           */
-          var amplitude = msg[1];
+          var amplitude = msg[1] / 100.0;
+          if (!isHitting) {
+            play(1, amplitude);
+          }
           break;
       }
     }
@@ -52,11 +63,18 @@ oscServer.on('message', function (msg, rinfo) {
 });
 
 /*
- * key - which: (int)
- * value - rgbw: (object)
+ * which: (int) number of light to control
+ * amp: (float) [0, 1]
  */
-var whichFrom = {};
-var whichTo = {};
+function play(which, amp) {
+  var channels = _mapChannels(which, {
+    r: 255 * amp,
+    b: 20 * amp,
+    g: 130 * amp,
+    w: 0
+  });
+  universe.update(channels);
+}
 
 /*
  * which: (int) number of light to control
@@ -65,23 +83,38 @@ var whichTo = {};
 function hit(which, amp) {
   var attack = 100; // ms
   var decay = 900; // ms
+  isHitting = true;
 
   var currentChannels = _getChannels(which);
 
-  var to = _mapChannels(which, {
-    r: Math.random() * 255 * amp,
-    g: Math.random() * 255 * amp,
-    b: Math.random() * 255 * amp,
+  var channels = _mapChannels(which, {
+    r: 0,
+    b: 0,
+    g: 0,
     w: 0
   });
-  new DMX.Animation()
+  universe.update(channels);
+
+  var toRgbw = pickerRgbw || {
+    r: 255,
+    g: 255,
+    b: 255,
+    w: 255
+  };
+
+  var to = _mapChannels(which, toRgbw);
+  new Animation()
     .add(to, attack, {
       easing: 'outExpo'
     })
-    .add(currentChannels, decay, {
+    .add(channels, decay, {
       easing: 'inExpo'
     })
     .run(universe);
+
+  setTimeout(function() {
+    isHitting = false;
+  }, attack + decay);
 }
 
 /*
@@ -99,12 +132,15 @@ function set(which, h, s, v) {
 
 module.exports.set = set;
 
+module.exports.setPicker = function(hsv) {
+  pickerRgbw = hsi2rgbw(hsv.h, hsv.s, hsv.v);
+};
+
 /*
  * which: (int) number of light to control
  * rgbw: (obj) object with properties r, g, b, w
  */
 function _mapChannels(which, rgbw) {
-  which = which + 1; // needed if player number 0 exists
   var channels = {};
   channels[which * 4] = rgbw.r;
   channels[which * 4 + 1] = rgbw.g;
@@ -114,11 +150,24 @@ function _mapChannels(which, rgbw) {
 }
 
 function _getChannels(which) {
-  which = which + 1; // needed if player number 0 exists
   var channels = {};
   channels[which * 4] = universe.get(which * 4);
   channels[which * 4 + 1] = universe.get(which * 4 + 1);
   channels[which * 4 + 2] = universe.get(which * 4 + 2);
   channels[which * 4 + 3] = universe.get(which * 4 + 3);
   return channels;
+}
+
+function testChannels() {
+  for (var i = 0; i <= 512; i++) {
+    setTimeout(function(i) {
+      var channels = {};
+      channels[i] = 20;
+      console.log(i);
+      if (i > 0) {
+        channels[i - 1] = 0;
+      }
+      universe.update(channels);
+    }.bind(null, i), 1000 * i);
+  }
 }
