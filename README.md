@@ -6,7 +6,7 @@
 
 [node.js](https://nodejs.org/en/), javascript runtime (packaged with npm)
 
-### osc to dmx (standalone)
+### osc to dmx (standalone, use for performance)
 
 ##### Install dependencies
 
@@ -21,9 +21,9 @@ npm install
 node osc-dmx.js
 ```
 
-The script will begin listening to OSC messages on port ```54321```. It will also open a serial connection to an Enttec USB DMX Pro on serial port ```/dev/cu.usbserial-EN209974``` (currently hardcoded to jz's laptop)
+The script will begin listening to OSC messages on port ```54321```. It will also detect or prompt for the correct serial port to open a connection to the Enttec USB DMX Pro.
 
-### osc to dmx (with web color picker interface)
+### osc to dmx (with web color picker interface for funsies / testing)
 
 ##### Install dependencies
 
