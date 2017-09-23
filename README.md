@@ -4,7 +4,7 @@
 
 [npm](https://www.npmjs.com/), a javascript package manager
 
-[node.js](https://nodejs.org/en/), javascript runtime (packaged with npm)
+[node.js](https://nodejs.org/en/), javascript runtime (comes with npm)
 
 ### osc to dmx (standalone, use for performance)
 
@@ -14,6 +14,8 @@
 cd js/
 npm install
 ```
+
+The `npm install` command will read the `package.json` in that directory to know which dependencies to install.
 
 ##### Run
 
