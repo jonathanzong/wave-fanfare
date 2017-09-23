@@ -77,8 +77,8 @@ function main(COM_PORT) {
       var cue = parseInt(input, 10);
       if (cue) {
         lightingCue = cue;
-        promptCue();
       }
+      promptCue();
     });
   }
 
