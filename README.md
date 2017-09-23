@@ -46,6 +46,9 @@ To test which lights are set to which channels, uncomment this line and run the 
 ```javascript
 // testChannels();
 ```
+<!--
+
+TODO: i broke the web interface when i added the serialport listing logic
 
 ### osc to dmx (with web color picker interface for funsies / testing)
 
@@ -65,3 +68,4 @@ npm start
 This script includes ```osc-dmx.js``` as a dependency, meaning it includes the same functionality. It will start listening for OSC and connect to serial as described above.
 
 It will also bind a web server to port ```3000```. Navigating to ```localhost:3000``` will open the web lighting console, which currently displays a color picker and an input for light number. Selecting a color on the color picker will set the specified light to that color.
+ -->
