@@ -12,7 +12,7 @@ var SerialPort = require('serialport');
  */
 SerialPort.list(function(err, ports) {
   var comNames = ports.map(function(port) {
-    return port.comName;
+    return port.comName.replace('tty', 'cu');
   })
   var usbPorts = comNames.filter(function(comName) {
     return comName.indexOf('usb') >= 0;
@@ -71,11 +71,12 @@ function main(COM_PORT) {
   // testChannels();
 
   var lightingCue = 0;
+  var lightingCues = {};
 
   function promptCue() {
     prompt('Current lighting cue is ' + lightingCue + '.\nEnter cue: ', function(input) {
       var cue = parseInt(input, 10);
-      if (cue) {
+      if (cue && lightingCues[cue]) {
         lightingCue = cue;
       }
       promptCue();
@@ -86,7 +87,7 @@ function main(COM_PORT) {
 
   // route incoming osc messages
   oscServer.on('message', function (msg, rinfo) {
-    console.log('recv: ' + msg.join(' '));
+    // console.log('recv: ' + msg.join(' '));
     // console.log(isHitting);
 
     var addr = msg[0].substring(1).split('/');
@@ -191,6 +192,7 @@ function main(COM_PORT) {
     var rgbw = hsi2rgbw(h, s, v);
     var channels = _mapChannels(which, rgbw);
     universe.update(channels);
+    console.log(channels);
     // TODO: send /phone/rgb r g b back to phone
   }
 
@@ -200,16 +202,20 @@ function main(COM_PORT) {
     pickerRgbw = hsi2rgbw(hsv.h, hsv.s, hsv.v);
   };
 
+  /* constant for what offset the addresses start at (e.g. 0 means the first red address is 0) */
+  var offset = 1;
+  var multiplier = 5;
+
   /*
    * which: (int) number of light to control
    * rgbw: (obj) object with properties r, g, b, w
    */
   function _mapChannels(which, rgbw) {
     var channels = {};
-    channels[which * 4] = rgbw.r;
-    channels[which * 4 + 1] = rgbw.g;
-    channels[which * 4 + 2] = rgbw.b;
-    channels[which * 4 + 3] = rgbw.w;
+    channels[which * multiplier + offset] = rgbw.r;
+    channels[which * multiplier + offset + 1] = rgbw.g;
+    channels[which * multiplier + offset + 2] = rgbw.b;
+    channels[which * multiplier + offset + 3] = rgbw.w;
     return channels;
   }
 
@@ -219,10 +225,10 @@ function main(COM_PORT) {
    */
   function _getChannels(which) {
     var channels = {};
-    channels[which * 4] = universe.get(which * 4);
-    channels[which * 4 + 1] = universe.get(which * 4 + 1);
-    channels[which * 4 + 2] = universe.get(which * 4 + 2);
-    channels[which * 4 + 3] = universe.get(which * 4 + 3);
+    channels[which * multiplier + offset] = universe.get(which * multiplier + offset);
+    channels[which * multiplier + offset + 1] = universe.get(which * multiplier + offset + 1);
+    channels[which * multiplier + offset + 2] = universe.get(which * multiplier + offset + 2);
+    channels[which * multiplier + offset + 3] = universe.get(which * multiplier + offset + 3);
     return channels;
   }
 
@@ -234,7 +240,7 @@ function main(COM_PORT) {
     for (var i = 0; i <= 512; i++) {
       setTimeout(function(i) {
         var channels = {};
-        channels[i] = 20;
+        channels[i] = 255;
         console.log(i);
         if (i > 0) {
           channels[i - 1] = 0;
