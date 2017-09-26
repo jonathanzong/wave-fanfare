@@ -6,8 +6,6 @@ var Animation = require('./animation');
 
 var SerialPort = require('serialport');
 
-var throttle = require('lodash.throttle');
-
 /*
  * This block lists the serial ports and tries to detect the USB box
  * or prompts for user to choose which one is correct.

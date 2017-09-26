@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "dependencies": {
     "dmx": "^0.0.5",
-    "lodash.throttle": "^4.1.1",
     "node-osc": "^2.1.0",
     "serialport": "^5.0.0"
   }
