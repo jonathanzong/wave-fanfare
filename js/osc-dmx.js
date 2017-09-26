@@ -73,19 +73,33 @@ function main(COM_PORT) {
   var lightingCue = 0;
   var lightingCues = {
     0: {
+      r: 0,
+      g: 0,
+      b: 0,
+      w: 0,
+      easeDuration: 0
+    },
+    1: {
       r: 255,
       g: 255,
       b: 255,
       w: 255,
       easeDuration: 30000
     },
-    1: {
+    2: {
       r: 255,
       g: 255,
       b: 0,
       w: 0,
       easeDuration: 30000
-    }
+    },
+  };
+
+  var activeRgbw = {
+    r: 0,
+    g: 0,
+    b: 0,
+    w: 0
   };
 
   var animators = {};
@@ -105,7 +119,12 @@ function main(COM_PORT) {
         }
         cueAnimator
           .add(channels, lightingCues[lightingCue].easeDuration)
-          .run(universe);
+          .run(universe, function(new_vals) {
+            activeRgbw.r = new_vals[offset];
+            activeRgbw.g = new_vals[offset + 1];
+            activeRgbw.b = new_vals[offset + 2];
+            activeRgbw.w = new_vals[offset + 3];
+          });
       }
       // var channels = {};
       // for (var i = 0; i <= 512; i++) {
@@ -130,7 +149,7 @@ function main(COM_PORT) {
       var which = addr[1];
       if (which) {
         if (!animators[which]) {
-          animators[which] = new Animation();
+          animators[which] = new Animation(true);
         }
         switch (addr[2]) {
           case 'set':
@@ -171,22 +190,20 @@ function main(COM_PORT) {
    * amp: (float) [0, 1]
    */
   function play(which, amp) {
-    var cue = lightingCues[lightingCue];
-
-    var channels = _mapChannels(which, {
-      r: cue.r * amp,
-      g: cue.g * amp,
-      b: cue.b * amp,
-      w: cue.w * amp
+    var to = _mapChannels(which, {
+      r: activeRgbw.r * amp,
+      g: activeRgbw.g * amp,
+      b: activeRgbw.b * amp,
+      w: activeRgbw.w * amp
     });
 
     animators[which]
-      .add(channels, 200, {
+      .add(to, 200, {
         easing: 'linear'
       })
       .run(universe);
 
-    lastPlays[which] = channels;
+    lastPlays[which] = to;
   }
 
   /*
@@ -198,13 +215,11 @@ function main(COM_PORT) {
     var decay = 900; // ms
     isHitting = true;
 
-    var cue = lightingCues[lightingCue];
-
     var toRgbw = pickerRgbw || {
-      r: cue.r * amp,
-      g: cue.g * amp,
-      b: cue.b * amp,
-      w: cue.w * amp
+      r: activeRgbw.r * amp,
+      g: activeRgbw.g * amp,
+      b: activeRgbw.b * amp,
+      w: activeRgbw.w * amp
     };
 
     lastPlays[which] = lastPlays[which] || _mapChannels(which, {
@@ -267,15 +282,15 @@ function main(COM_PORT) {
 
   /*
    * which: (int) number of light to control
-   * returns object with property representing channel number mapped to channel value
+   * returns object with properties for rgbw
    */
-  function _getChannels(which) {
-    var channels = {};
-    channels[which * multiplier + offset] = universe.get(which * multiplier + offset);
-    channels[which * multiplier + offset + 1] = universe.get(which * multiplier + offset + 1);
-    channels[which * multiplier + offset + 2] = universe.get(which * multiplier + offset + 2);
-    channels[which * multiplier + offset + 3] = universe.get(which * multiplier + offset + 3);
-    return channels;
+  function _getRgbw(which) {
+    var rgbw = {};
+    rgbw.r = universe.get(which * multiplier + offset);
+    rgbw.g = universe.get(which * multiplier + offset + 1);
+    rgbw.b = universe.get(which * multiplier + offset + 2);
+    rgbw.w = universe.get(which * multiplier + offset + 3);
+    return rgbw;
   }
 
   /*
