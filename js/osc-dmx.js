@@ -21,46 +21,46 @@ var isHitting = false;
 // testChannels();
 
 // route incoming osc messages
-oscServer.on('message', function (msg, rinfo) {
-  console.log('recv: ' + msg.join(' '));
-  // console.log(isHitting);
+// oscServer.on('message', function (msg, rinfo) {
+//   console.log('recv: ' + msg.join(' '));
+//   // console.log(isHitting);
 
-  var addr = msg[0].substring(1).split('/');
+//   var addr = msg[0].substring(1).split('/');
 
-  if (addr[0] === 'led') {
-    var which = addr[1];
-    if (which) {
-      switch (addr[2]) {
-        case 'set':
-          /*
-            /led/:x/set f f f
-          */
-          var h = msg[1];
-          var s = msg[2];
-          var v = msg[3];
+//   if (addr[0] === 'led') {
+//     var which = addr[1];
+//     if (which) {
+//       switch (addr[2]) {
+//         case 'set':
+//           /*
+//             /led/:x/set f f f
+//           */
+//           var h = msg[1];
+//           var s = msg[2];
+//           var v = msg[3];
 
-          set(which, h, s, v);
-          break;
-        case 'hit':
-          /*
-            /led/:x/hit f
-          */
-          var amplitude = msg[1];
-          hit(1, amplitude);
-          break;
-        case 'play':
-          /*
-            /led/:x/play f
-          */
-          var amplitude = msg[1] / 100.0;
-          if (!isHitting) {
-            play(1, amplitude);
-          }
-          break;
-      }
-    }
-  }
-});
+//           set(which, h, s, v);
+//           break;
+//         case 'hit':
+//           /*
+//             /led/:x/hit f
+//           */
+//           var amplitude = msg[1];
+//           hit(1, amplitude);
+//           break;
+//         case 'play':
+//           /*
+//             /led/:x/play f
+//           */
+//           var amplitude = msg[1] / 100.0;
+//           if (!isHitting) {
+//             play(1, amplitude);
+//           }
+//           break;
+//       }
+//     }
+//   }
+// });
 
 /*
  * which: (int) number of light to control
@@ -142,19 +142,19 @@ module.exports.setPicker = function(hsv) {
  */
 function _mapChannels(which, rgbw) {
   var channels = {};
-  channels[which * 4] = rgbw.r;
-  channels[which * 4 + 1] = rgbw.g;
-  channels[which * 4 + 2] = rgbw.b;
-  channels[which * 4 + 3] = rgbw.w;
+  channels[which * 5] = rgbw.r;
+  channels[which * 5 + 1] = rgbw.g;
+  channels[which * 5 + 2] = rgbw.b;
+  channels[which * 5 + 3] = rgbw.w;
   return channels;
 }
 
 function _getChannels(which) {
   var channels = {};
-  channels[which * 4] = universe.get(which * 4);
-  channels[which * 4 + 1] = universe.get(which * 4 + 1);
-  channels[which * 4 + 2] = universe.get(which * 4 + 2);
-  channels[which * 4 + 3] = universe.get(which * 4 + 3);
+  channels[which * 5] = universe.get(which * 5);
+  channels[which * 5 + 1] = universe.get(which * 5 + 1);
+  channels[which * 5 + 2] = universe.get(which * 5 + 2);
+  channels[which * 5 + 3] = universe.get(which * 5 + 3);
   return channels;
 }
 

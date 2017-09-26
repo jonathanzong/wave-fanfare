@@ -17,7 +17,9 @@ io.on('connection', function(socket){
   var which = 0;
 
   socket.on('hsv', function(hsv){
-    oscdmx.set(which, hsv.h, hsv.s, hsv.v)
+    for (var i = 0; i <= 12; i++) {
+      oscdmx.set(i, hsv.h, hsv.s, hsv.v)
+    }
     oscdmx.setPicker(hsv);
   });
 
