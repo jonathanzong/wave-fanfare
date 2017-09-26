@@ -76,26 +76,36 @@ function main(COM_PORT) {
       r: 255,
       g: 255,
       b: 255,
-      w: 255
+      w: 255,
+      easeDuration: 30000
     },
     1: {
       r: 255,
       g: 255,
       b: 0,
-      w: 0
+      w: 0,
+      easeDuration: 30000
     }
   };
+
+  var animators = {};
+  var cueAnimator = new Animation();
 
   function promptCue() {
     prompt('Current lighting cue is ' + lightingCue + '.\nEnter cue: ', function(input) {
       var cue = parseInt(input, 10);
       if (cue !== NaN && lightingCues[cue]) {
         lightingCue = cue;
-        //
-        for (var i = 0; i <= 15; i++) {
-          var channels = _mapChannels(i, lightingCues[lightingCue]);
-          universe.update(channels);
+        var channels = {};
+        for (var which = 0; which <= 12; which++) {
+          channels[which * multiplier + offset] = lightingCues[lightingCue].r;
+          channels[which * multiplier + offset + 1] = lightingCues[lightingCue].g;
+          channels[which * multiplier + offset + 2] = lightingCues[lightingCue].b;
+          channels[which * multiplier + offset + 3] = lightingCues[lightingCue].w;
         }
+        cueAnimator
+          .add(channels, lightingCues[lightingCue].easeDuration)
+          .run(universe);
       }
       // var channels = {};
       // for (var i = 0; i <= 512; i++) {
@@ -119,6 +129,9 @@ function main(COM_PORT) {
     if (addr[0] === 'led') {
       var which = addr[1];
       if (which) {
+        if (!animators[which]) {
+          animators[which] = new Animation();
+        }
         switch (addr[2]) {
           case 'set':
             /*
@@ -134,7 +147,6 @@ function main(COM_PORT) {
             /*
               /led/:x/hit f
             */
-            console.log('recv: ' + msg.join(' '));
             var amplitude = msg[1];
             hit(which, amplitude);
             break;
@@ -142,15 +154,17 @@ function main(COM_PORT) {
             /*
               /led/:x/play f
             */
-            // var amplitude = msg[1] / 100.0;
-            // if (!isHitting) {
-            //   play(which, amplitude);
-            // }
+            var amplitude = msg[1] / 100.0;
+            if (!isHitting) {
+              play(which, amplitude);
+            }
             break;
         }
       }
     }
   });
+
+  var lastPlays = {};
 
   /*
    * which: (int) number of light to control
@@ -165,7 +179,14 @@ function main(COM_PORT) {
       b: cue.b * amp,
       w: cue.w * amp
     });
-    universe.update(channels);
+
+    animators[which]
+      .add(channels, 200, {
+        easing: 'linear'
+      })
+      .run(universe);
+
+    lastPlays[which] = channels;
   }
 
   /*
@@ -177,11 +198,7 @@ function main(COM_PORT) {
     var decay = 900; // ms
     isHitting = true;
 
-    var currentChannels = _getChannels(which);
-
     var cue = lightingCues[lightingCue];
-
-    set(which, 0, 0, 0);
 
     var toRgbw = pickerRgbw || {
       r: cue.r * amp,
@@ -190,12 +207,19 @@ function main(COM_PORT) {
       w: cue.w * amp
     };
 
+    lastPlays[which] = lastPlays[which] || _mapChannels(which, {
+      r: 0,
+      g: 0,
+      b: 0,
+      w: 0
+    });
+
     var to = _mapChannels(which, toRgbw);
-    new Animation()
+    animators[which]
       .add(to, attack, {
         easing: 'outExpo'
       })
-      .add(currentChannels, decay, {
+      .add(lastPlays[which], decay, {
         easing: 'inExpo'
       })
       .run(universe);

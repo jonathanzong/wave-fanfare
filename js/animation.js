@@ -1,7 +1,7 @@
 "use strict"
 
 var ease = require('./node_modules/dmx/easing').ease
-var resolution = 25
+var resolution = 10
 
 function Anim() {
   this.fx_stack = []
