@@ -6,6 +6,8 @@ var Animation = require('./animation');
 
 var SerialPort = require('serialport');
 
+var throttle = require('lodash.throttle');
+
 /*
  * This block lists the serial ports and tries to detect the USB box
  * or prompts for user to choose which one is correct.
@@ -71,14 +73,38 @@ function main(COM_PORT) {
   // testChannels();
 
   var lightingCue = 0;
-  var lightingCues = {};
+  var lightingCues = {
+    0: {
+      r: 255,
+      g: 255,
+      b: 255,
+      w: 255
+    },
+    1: {
+      r: 255,
+      g: 255,
+      b: 0,
+      w: 0
+    }
+  };
 
   function promptCue() {
     prompt('Current lighting cue is ' + lightingCue + '.\nEnter cue: ', function(input) {
       var cue = parseInt(input, 10);
-      if (cue && lightingCues[cue]) {
+      if (cue !== NaN && lightingCues[cue]) {
         lightingCue = cue;
+        //
+        for (var i = 0; i <= 15; i++) {
+          var channels = _mapChannels(i, lightingCues[lightingCue]);
+          universe.update(channels);
+        }
       }
+      // var channels = {};
+      // for (var i = 0; i <= 512; i++) {
+      //   channels[i] = 0;
+      // }
+      // channels[cue] = 255;
+      // universe.update(channels);
       promptCue();
     });
   }
@@ -110,17 +136,18 @@ function main(COM_PORT) {
             /*
               /led/:x/hit f
             */
+            console.log('recv: ' + msg.join(' '));
             var amplitude = msg[1];
-            hit(1, amplitude);
+            hit(which, amplitude);
             break;
           case 'play':
             /*
               /led/:x/play f
             */
-            var amplitude = msg[1] / 100.0;
-            if (!isHitting) {
-              play(1, amplitude);
-            }
+            // var amplitude = msg[1] / 100.0;
+            // if (!isHitting) {
+            //   play(which, amplitude);
+            // }
             break;
         }
       }
@@ -132,11 +159,13 @@ function main(COM_PORT) {
    * amp: (float) [0, 1]
    */
   function play(which, amp) {
+    var cue = lightingCues[lightingCue];
+
     var channels = _mapChannels(which, {
-      r: 255 * amp,
-      b: 20 * amp,
-      g: 130 * amp,
-      w: 0
+      r: cue.r * amp,
+      g: cue.g * amp,
+      b: cue.b * amp,
+      w: cue.w * amp
     });
     universe.update(channels);
   }
@@ -152,19 +181,15 @@ function main(COM_PORT) {
 
     var currentChannels = _getChannels(which);
 
-    var channels = _mapChannels(which, {
-      r: 0,
-      b: 0,
-      g: 0,
-      w: 0
-    });
-    universe.update(channels);
+    var cue = lightingCues[lightingCue];
+
+    set(which, 0, 0, 0);
 
     var toRgbw = pickerRgbw || {
-      r: 255,
-      g: 255,
-      b: 255,
-      w: 255
+      r: cue.r * amp,
+      g: cue.g * amp,
+      b: cue.b * amp,
+      w: cue.w * amp
     };
 
     var to = _mapChannels(which, toRgbw);
@@ -172,7 +197,7 @@ function main(COM_PORT) {
       .add(to, attack, {
         easing: 'outExpo'
       })
-      .add(channels, decay, {
+      .add(currentChannels, decay, {
         easing: 'inExpo'
       })
       .run(universe);
@@ -192,7 +217,6 @@ function main(COM_PORT) {
     var rgbw = hsi2rgbw(h, s, v);
     var channels = _mapChannels(which, rgbw);
     universe.update(channels);
-    console.log(channels);
     // TODO: send /phone/rgb r g b back to phone
   }
 
@@ -203,7 +227,7 @@ function main(COM_PORT) {
   };
 
   /* constant for what offset the addresses start at (e.g. 0 means the first red address is 0) */
-  var offset = 1;
+  var offset = 0;
   var multiplier = 5;
 
   /*
