@@ -72,27 +72,16 @@ function main(COM_PORT) {
 
   var lightingCue = 0;
   var lightingCues = {
-    0: {
-      r: 0,
-      g: 0,
-      b: 0,
-      w: 0,
-      easeDuration: 0
-    },
-    1: {
-      r: 255,
-      g: 255,
-      b: 255,
-      w: 255,
-      easeDuration: 30000
-    },
-    2: {
-      r: 255,
-      g: 255,
-      b: 0,
-      w: 0,
-      easeDuration: 30000
-    },
+    0: { r: 0, g: 0, b: 0, w: 0, easeDuration: 0 }, // black
+    1: { r: 108.37102044198231, g: 82.87897955801769, b: 0, w: 63.75, easeDuration: 90000 }, // warm white/gold
+    2: { r: 0, g: 0, b: 0, w: 255, easeDuration: 50000 }, // cold white
+    3: { r: 0, g: 122.35216125308986, b: 132.64783874691014, w: 0, easeDuration: 60000 }, // blue
+    4: { r: 11.185431153471619, g: 116.31456884652837, b: 0, w: 127.5, easeDuration: 30000 }, // pale green
+    5: { r: 115.5959594771724, g: 0, b: 88.4040405228276, w: 50.999999999999986, easeDuration: 60000 }, // purple
+    6: { r: 255, g: 221.239542913, b: 0, w: 0, easeDuration: 15000 }, // yellow
+    7: { r: 255, g: 0, b: 0, w: 0, easeDuration: 3000 }, // red
+    8: { r: 0, g: 0, b: 0, w: 255, easeDuration: 45000 }, // cold white
+    9: { r: 0, g: 0, b: 0, w: 0, easeDuration: 1000 }, // black
   };
 
   var activeRgbw = {
@@ -198,9 +187,7 @@ function main(COM_PORT) {
     });
 
     animators[which]
-      .add(to, 200, {
-        easing: 'linear'
-      })
+      .add(to, 200)
       .run(universe);
 
     lastPlays[which] = to;
@@ -231,12 +218,8 @@ function main(COM_PORT) {
 
     var to = _mapChannels(which, toRgbw);
     animators[which]
-      .add(to, attack, {
-        easing: 'outExpo'
-      })
-      .add(lastPlays[which], decay, {
-        easing: 'inExpo'
-      })
+      .add(to, attack)
+      .add(lastPlays[which], decay)
       .run(universe);
 
     setTimeout(function() {
