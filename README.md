@@ -46,6 +46,13 @@ To test which lights are set to which channels, uncomment this line and run the 
 ```javascript
 // testChannels();
 ```
+
+##### Assorted Knowledge
+
+* Only cu (not tty) serial ports work,
+* the QolorPoints have to be showing the dark green color on the Show DMX ID indicator (and not blinking)
+* Turn off energy saver so the laptop doesn't go to sleep
+
 <!--
 
 TODO: i broke the web interface when i added the serialport listing logic
