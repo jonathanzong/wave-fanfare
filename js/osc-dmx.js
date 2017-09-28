@@ -64,11 +64,15 @@ function main(COM_PORT) {
     COM_PORT);
   console.log('serial opened on port ' + COM_PORT);
 
-  var pickerRgbw;
-
-  var isHitting = false;
-
   // testChannels();
+  // lightAll();
+
+  // state variables
+  var isHitting = {};
+  var lastPlays = {};
+
+  var animators = {};
+  var cueAnimator = new Animation();
 
   var lightingCue = 0;
   var lightingCues = {
@@ -91,36 +95,26 @@ function main(COM_PORT) {
     w: 0
   };
 
-  var animators = {};
-  var cueAnimator = new Animation();
+  var globalChannels = {};
 
+  var tickRate = 25;
+
+  /* send to dmx on an interval */
+  setInterval(function() {
+    universe.update(globalChannels);
+  }, tickRate);
+
+  /* user prompt to enter cue number */
   function promptCue() {
     prompt('Current lighting cue is ' + lightingCue + '.\nEnter cue: ', function(input) {
       var cue = parseInt(input, 10);
       if (cue !== NaN && lightingCues[cue]) {
         lightingCue = cue;
         var channels = {};
-        for (var which = 0; which <= 12; which++) {
-          channels[which * multiplier + offset] = lightingCues[lightingCue].r;
-          channels[which * multiplier + offset + 1] = lightingCues[lightingCue].g;
-          channels[which * multiplier + offset + 2] = lightingCues[lightingCue].b;
-          channels[which * multiplier + offset + 3] = lightingCues[lightingCue].w;
-        }
         cueAnimator
-          .add(channels, lightingCues[lightingCue].easeDuration)
-          .run(universe, function(new_vals) {
-            activeRgbw.r = new_vals[offset];
-            activeRgbw.g = new_vals[offset + 1];
-            activeRgbw.b = new_vals[offset + 2];
-            activeRgbw.w = new_vals[offset + 3];
-          });
+          .add(lightingCues[lightingCue], lightingCues[lightingCue].easeDuration)
+          .run(activeRgbw);
       }
-      // var channels = {};
-      // for (var i = 0; i <= 512; i++) {
-      //   channels[i] = 0;
-      // }
-      // channels[cue] = 255;
-      // universe.update(channels);
       promptCue();
     });
   }
@@ -130,7 +124,6 @@ function main(COM_PORT) {
   // route incoming osc messages
   oscServer.on('message', function (msg, rinfo) {
     // console.log('recv: ' + msg.join(' '));
-    // console.log(isHitting);
 
     var addr = msg[0].substring(1).split('/');
 
@@ -138,7 +131,7 @@ function main(COM_PORT) {
       var which = addr[1];
       if (which) {
         if (!animators[which]) {
-          animators[which] = new Animation(true);
+          animators[which] = new Animation();
         }
         switch (addr[2]) {
           case 'set':
@@ -162,17 +155,13 @@ function main(COM_PORT) {
             /*
               /led/:x/play f
             */
-            var amplitude = msg[1] / 100.0;
-            if (!isHitting) {
-              play(which, amplitude);
-            }
+            var amplitude = msg[1] / 100.0; // DON'T FORGET
+            play(which, amplitude);
             break;
         }
       }
     }
   });
-
-  var lastPlays = {};
 
   /*
    * which: (int) number of light to control
@@ -186,11 +175,13 @@ function main(COM_PORT) {
       w: activeRgbw.w * amp
     });
 
-    animators[which]
-      .add(to, 200)
-      .run(universe);
-
     lastPlays[which] = to;
+
+    if (!isHitting[which]) {
+      animators[which]
+        .add(to, 100)
+        .run(globalChannels);
+    }
   }
 
   /*
@@ -200,9 +191,9 @@ function main(COM_PORT) {
   function hit(which, amp) {
     var attack = 100; // ms
     var decay = 900; // ms
-    isHitting = true;
+    isHitting[which] = true;
 
-    var toRgbw = pickerRgbw || {
+    var toRgbw = {
       r: activeRgbw.r * amp,
       g: activeRgbw.g * amp,
       b: activeRgbw.b * amp,
@@ -218,12 +209,12 @@ function main(COM_PORT) {
 
     var to = _mapChannels(which, toRgbw);
     animators[which]
-      .add(to, attack)
-      .add(lastPlays[which], decay)
-      .run(universe);
+      .add(to, attack, 'outExpo')
+      .add(lastPlays[which], decay, 'inExpo')
+      .run(globalChannels);
 
     setTimeout(function() {
-      isHitting = false;
+      isHitting[which] = false;
     }, attack + decay);
   }
 
@@ -236,15 +227,11 @@ function main(COM_PORT) {
   function set(which, h, s, v) {
     var rgbw = hsi2rgbw(h, s, v);
     var channels = _mapChannels(which, rgbw);
-    universe.update(channels);
+    for (var key in channels) {
+      globalChannels[key] = channels[key];
+    }
     // TODO: send /phone/rgb r g b back to phone
   }
-
-  module.exports.set = set;
-
-  module.exports.setPicker = function(hsv) {
-    pickerRgbw = hsi2rgbw(hsv.h, hsv.s, hsv.v);
-  };
 
   /* constant for what offset the addresses start at (e.g. 0 means the first red address is 0) */
   var offset = 0;
@@ -283,14 +270,20 @@ function main(COM_PORT) {
   function testChannels() {
     for (var i = 0; i <= 512; i++) {
       setTimeout(function(i) {
-        var channels = {};
-        channels[i] = 255;
-        console.log(i);
+        globalChannels[i] = 255;
         if (i > 0) {
-          channels[i - 1] = 0;
+          globalChannels[i - 1] = 0;
         }
-        universe.update(channels);
       }.bind(null, i), 1000 * i);
+    }
+  }
+
+  /*
+   * Lights all channels to see if receiving DMX properly
+   */
+  function lightAll() {
+    for (var i = 0; i <= 512; i++) {
+      globalChannels[i] = 255;
     }
   }
 

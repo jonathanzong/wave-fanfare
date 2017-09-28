@@ -1,42 +1,37 @@
-"use strict"
+// animation.js
 
 var ease = require('./node_modules/dmx/easing').ease
 var resolution = 10
 
-function Anim(updateUniverse) {
-  this.fx_stack = []
-  this.updateUniverse = updateUniverse;
-  this.iid;
+function Animator() {
+  this.fx_queue = [];
+  this.iid = null;
 }
 
-Anim.prototype.add = function(to, duration, options) {
-  var options  = options  || {}
+Animator.prototype.add = function(to, duration, easing) {
   var duration = duration || resolution
-  options['easing'] = options['easing'] || 'linear'
-  this.fx_stack.push({'to': to, 'duration': duration, 'options': options})
-  return this
+  this.fx_queue.push({'to': to, 'duration': duration, 'easing': easing || 'linear'});
+  return this;
 }
 
-Anim.prototype.delay = function(duration) {
-  return this.add({}, duration)
-}
-
-Anim.prototype.run = function(universe, onStep) {
+Animator.prototype.run = function(from, onStep) {
   var config = {}
   var t = 0
   var d = 0
   var a
   var self = this;
+  var easing = 'linear';
 
-  var fx_stack = this.fx_stack;
+  var fx_queue = this.fx_queue;
   var ani_setup = function() {
-    a = fx_stack.shift()
+    a = fx_queue.shift()
     t = 0
     d = a.duration
     config = {}
+    easing = a.easing;
     for(var k in a.to) {
       config[k] = {
-        'start': universe.get(k),
+        'start': from[k] || 0,
         'end':   a.to[k]
       }
     }
@@ -44,15 +39,16 @@ Anim.prototype.run = function(universe, onStep) {
   var ani_step = function() {
     var new_vals = {}
     for(var k in config) {
-      new_vals[k] = Math.round(config[k].start + ease['linear'](t, 0, 1, d) * (config[k].end - config[k].start))
+      new_vals[k] = Math.round(config[k].start + ease[easing](t, 0, 1, d) * (config[k].end - config[k].start))
     }
     t = t + resolution
     if(onStep) onStep(new_vals);
-    if (self.updateUniverse) {
-      universe.update(new_vals)
+    //   universe.update(new_vals)
+    for (var key in new_vals) {
+      from[key] = new_vals[key];
     }
     if(t > d) {
-      if(fx_stack.length > 0) {
+      if(fx_queue.length > 0) {
         ani_setup()
       } else {
         clearInterval(self.iid)
@@ -65,4 +61,4 @@ Anim.prototype.run = function(universe, onStep) {
   self.iid = setInterval(ani_step, resolution)
 }
 
-module.exports = Anim
+module.exports = Animator;
