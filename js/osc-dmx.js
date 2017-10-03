@@ -83,7 +83,7 @@ function main(COM_PORT) {
     4: { r: 11.185431153471619, g: 116.31456884652837, b: 0, w: 127.5, easeDuration: 30000 }, // pale green
     5: { r: 115.5959594771724, g: 0, b: 88.4040405228276, w: 50.999999999999986, easeDuration: 60000 }, // purple
     6: { r: 255, g: 221.239542913, b: 0, w: 0, easeDuration: 15000 }, // yellow
-    7: { r: 255, g: 0, b: 0, w: 0, easeDuration: 3000 }, // red
+    7: { r: 255, g: 0, b: 0, w: 0, easeDuration: 1000 }, // red
     8: { r: 0, g: 0, b: 0, w: 255, easeDuration: 45000 }, // cold white
     9: { r: 0, g: 0, b: 0, w: 0, easeDuration: 1000 }, // black
   };
@@ -110,10 +110,16 @@ function main(COM_PORT) {
       var cue = parseInt(input, 10);
       if (cue !== NaN && lightingCues[cue]) {
         lightingCue = cue;
-        var channels = {};
         cueAnimator
           .add(lightingCues[lightingCue], lightingCues[lightingCue].easeDuration)
           .run(activeRgbw);
+      }
+      else if (input === 'on') {
+        lightAll(); // sets all to white
+      }
+      else if (input.indexOf('set') == 0) {
+        var addr = parseInt(input.split(' ')[1], 10);
+        globalChannels[addr] = globalChannels[addr] ? 0 : 255;
       }
       promptCue();
     });
@@ -155,7 +161,7 @@ function main(COM_PORT) {
             /*
               /led/:x/play f
             */
-            var amplitude = msg[1] / 100.0; // DON'T FORGET
+            var amplitude = msg[1];
             play(which, amplitude);
             break;
         }
@@ -285,6 +291,12 @@ function main(COM_PORT) {
     for (var i = 0; i <= 512; i++) {
       globalChannels[i] = 255;
     }
+    activeRgbw = {
+      r: 255,
+      g: 255,
+      b: 255,
+      w: 255
+    };
   }
 
 }
