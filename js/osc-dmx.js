@@ -85,7 +85,7 @@ function main(COM_PORT) {
     6: { r: 255, g: 221.239542913, b: 0, w: 0, easeDuration: 30000 }, // yellow
     7: { r: 255, g: 0, b: 0, w: 0, easeDuration: 0 }, // red
     8: { r: 0, g: 0, b: 0, w: 255, easeDuration: 45000 }, // cold white
-    9: { r: 0, g: 0, b: 0, w: 0, easeDuration: 500 }, // black
+    9: { r: 0, g: 0, b: 0, w: 0, easeDuration: 1000 }, // black
   };
 
   var activeRgbw = {
@@ -291,27 +291,25 @@ function main(COM_PORT) {
    * Lights all channels to see if receiving DMX properly
    */
   function lightAll() {
-    for (var i = 0; i <= 512; i++) {
-      globalChannels[i] = 255;
+    activeRgbw = lightingCues[lightingCue];
+    for (var which = 0; which <= 11; which++) {
+      globalChannels[which * multiplier + offset] = activeRgbw.r;
+      globalChannels[which * multiplier + offset + 1] = activeRgbw.g;
+      globalChannels[which * multiplier + offset + 2] = activeRgbw.b;
+      globalChannels[which * multiplier + offset + 3] = activeRgbw.w;
     }
-    activeRgbw = {
-      r: 255,
-      g: 255,
-      b: 255,
-      w: 255
-    };
   }
 
   function dimAll() {
-    for (var i = 0; i <= 512; i++) {
-      globalChannels[i] = 0;
-    }
     activeRgbw = {
       r: 0,
       g: 0,
       b: 0,
       w: 0
     };
+    for (var i = 0; i <= 512; i++) {
+      globalChannels[i] = 0;
+    }
   }
 
 }
